@@ -1,1 +1,1 @@
-# test
+# Arduino based RFID reader using software EM4100 decoder
