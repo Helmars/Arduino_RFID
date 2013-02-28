@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 uint8_t cparity;
 uint8_t numbers[5];
 
@@ -8,6 +10,8 @@ uint8_t numbers[5];
 #define GEN_PIN_NUM     3  // Arduino PIN11
 #define GEN_PIN_MASK    (1<<GEN_PIN_NUM)
 #define LED             13
+#define ADM_BUTTON      2
+#define SAVE_SLOTS      100
 
 void setup() {
   TCCR2A=0b01000010;  // Toggle OC2A on Compare Match, Clear Timer on Compare Match
@@ -22,6 +26,12 @@ void setup() {
   Serial.println("Hello"); 
   pinMode(4,INPUT);  // RFID input
   pinMode(LED,OUTPUT);
+  pinMode(ADM_BUTTON,INPUT_PULLUP);  // Administrative button
+  if (digitalRead(ADM_BUTTON)==LOW){
+    uint8_t card[]={0,0,0,0,0};
+    for (uint8_t i=0;i<SAVE_SLOTS;i++)
+      saveCard(i,card);
+  }
 }
 
 void wait(uint8_t t){
@@ -92,6 +102,45 @@ uint8_t readCard(){
   return 0;
 }
 
+bool loadCard(uint8_t s,uint8_t card[]){
+  bool notEmpty=false;
+  uint16_t addr=s*5;
+  for (uint8_t i=0;i<5;i++){
+    uint8_t b=EEPROM.read(addr+i);
+    notEmpty=notEmpty||b;
+    card[i]=b;
+  }
+  return notEmpty;
+}
+
+void saveCard(uint8_t s,uint8_t card[]){
+  uint16_t addr=s*5;
+  for (uint8_t i=0;i<5;i++)
+    EEPROM.write(addr+i,card[i]);
+}
+
+int8_t addCard(uint8_t card[]){
+  for (uint8_t i=0;i<SAVE_SLOTS;i++){
+    uint8_t c[5];
+    if (!loadCard(i,c)){
+      saveCard(i,card);
+      return i;
+    }
+  }
+  return -1;
+}
+
+int8_t validateCard(uint8_t card[]){
+  uint8_t c[5];
+  for (uint8_t i=0;i<SAVE_SLOTS;i++){
+    if (!loadCard(i,c)) continue;
+    bool found=true;
+    for (uint8_t j=0;j<5;j++) found=found&&(c[j]==card[j]);
+    if (found) return i;
+  }
+  return -1;
+}
+
 void loop() {
   digitalWrite(LED,LOW);
   uint8_t result;
@@ -99,6 +148,11 @@ void loop() {
     result=readCard();
   } while (result!=0);
   digitalWrite(LED,HIGH);
+  if (digitalRead(ADM_BUTTON)==LOW){
+    if (validateCard(numbers)<0) addCard(numbers);
+  }
+  Serial.print("ACCESS ");
+  if (validateCard(numbers)>=0) Serial.println("GRANTED"); else Serial.println("DENIED");
   Serial.print("Raw data: ");
   for (uint8_t i=0;i<5;i++) Serial.print(numbers[i],HEX);
   Serial.println();
@@ -114,3 +168,29 @@ void loop() {
   Serial.print(*(uint32_t*)(&numbersr),DEC);
   Serial.println();
 }
+
+/*
+void loop(){
+  uint8_t card[]={0,0,0,0,0};
+  for (uint8_t i=0;i<SAVE_SLOTS;i++)
+    saveCard(i,card);
+  card[0]=0x11;
+  card[1]=0x22;
+  card[2]=0x33;
+  card[3]=0x44;
+  card[4]=0x55;
+  Serial.println(addCard(card));
+  card[0]=0x11;
+  card[1]=0x22;
+  card[2]=0x77;
+  card[3]=0x44;
+  card[4]=0x55;
+  Serial.println(addCard(card));
+  Serial.println(validateCard(card));
+  card[2]=0x33;
+  Serial.println(validateCard(card));
+  card[2]=0x99;
+  Serial.println(validateCard(card));
+  while (1);
+}
+*/
