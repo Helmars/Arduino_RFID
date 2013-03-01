@@ -12,6 +12,14 @@ uint8_t numbers[5];
 #define LED             13
 #define ADM_BUTTON      2
 #define SAVE_SLOTS      100
+#define BUZZER          5
+#define LOCK            6
+
+void beep(uint16_t t){
+  digitalWrite(BUZZER,HIGH);
+  delay(t);
+  digitalWrite(BUZZER,LOW);
+}
 
 void setup() {
   TCCR2A=0b01000010;  // Toggle OC2A on Compare Match, Clear Timer on Compare Match
@@ -27,10 +35,19 @@ void setup() {
   pinMode(4,INPUT);  // RFID input
   pinMode(LED,OUTPUT);
   pinMode(ADM_BUTTON,INPUT_PULLUP);  // Administrative button
+  pinMode(BUZZER,OUTPUT);
+  digitalWrite(BUZZER,LOW);
+  pinMode(LOCK,OUTPUT);
+  digitalWrite(LOCK,LOW);
   if (digitalRead(ADM_BUTTON)==LOW){
-    uint8_t card[]={0,0,0,0,0};
-    for (uint8_t i=0;i<SAVE_SLOTS;i++)
-      saveCard(i,card);
+    beep(200);  // warning
+    delay(1000);
+    if (digitalRead(ADM_BUTTON)==LOW){
+      uint8_t card[]={0,0,0,0,0};
+      for (uint8_t i=0;i<SAVE_SLOTS;i++)
+        saveCard(i,card);
+      beep(1000);
+    }
   }
 }
 
@@ -103,14 +120,14 @@ uint8_t readCard(){
 }
 
 bool loadCard(uint8_t s,uint8_t card[]){
-  bool notEmpty=false;
+  bool cardExists=false;
   uint16_t addr=s*5;
   for (uint8_t i=0;i<5;i++){
     uint8_t b=EEPROM.read(addr+i);
-    notEmpty=notEmpty||b;
+    cardExists=cardExists||b;
     card[i]=b;
   }
-  return notEmpty;
+  return cardExists;
 }
 
 void saveCard(uint8_t s,uint8_t card[]){
@@ -149,10 +166,13 @@ void loop() {
   } while (result!=0);
   digitalWrite(LED,HIGH);
   if (digitalRead(ADM_BUTTON)==LOW){
-    if (validateCard(numbers)<0) addCard(numbers);
+    uint8_t n=validateCard(numbers);
+    if (n<0) addCard(numbers);
+    else {
+      uint8_t c[]={0,0,0,0,0};
+      saveCard(n,c);
+    }
   }
-  Serial.print("ACCESS ");
-  if (validateCard(numbers)>=0) Serial.println("GRANTED"); else Serial.println("DENIED");
   Serial.print("Raw data: ");
   for (uint8_t i=0;i<5;i++) Serial.print(numbers[i],HEX);
   Serial.println();
@@ -167,6 +187,22 @@ void loop() {
   numbersr[3]=numbers[1];
   Serial.print(*(uint32_t*)(&numbersr),DEC);
   Serial.println();
+  Serial.print("ACCESS ");
+  if (validateCard(numbers)>=0){
+    Serial.println("GRANTED");
+    beep(400);
+    digitalWrite(LED,LOW);
+    digitalWrite(LOCK,HIGH);
+    delay(5000);
+    digitalWrite(LOCK,LOW);
+  } else {
+    Serial.println("DENIED");
+    beep(200);
+    delay(50);
+    beep(200);
+    digitalWrite(LED,LOW);
+    delay(2000);
+  }
 }
 
 /*
