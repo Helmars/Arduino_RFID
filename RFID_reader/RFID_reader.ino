@@ -16,9 +16,12 @@ uint8_t numbers[5];
 #define LOCK            6
 
 void beep(uint16_t t){
-  digitalWrite(BUZZER,HIGH);
-  delay(t);
-  digitalWrite(BUZZER,LOW);
+  for (uint16_t i=0;i<t;i++){
+    digitalWrite(BUZZER,HIGH);
+    delayMicroseconds(500);
+    digitalWrite(BUZZER,LOW);
+    delayMicroseconds(500);
+  }
 }
 
 void setup() {
@@ -166,7 +169,7 @@ void loop() {
   } while (result!=0);
   digitalWrite(LED,HIGH);
   if (digitalRead(ADM_BUTTON)==LOW){
-    uint8_t n=validateCard(numbers);
+    int8_t n=validateCard(numbers);
     if (n<0) addCard(numbers);
     else {
       uint8_t c[]={0,0,0,0,0};
@@ -204,29 +207,3 @@ void loop() {
     delay(2000);
   }
 }
-
-/*
-void loop(){
-  uint8_t card[]={0,0,0,0,0};
-  for (uint8_t i=0;i<SAVE_SLOTS;i++)
-    saveCard(i,card);
-  card[0]=0x11;
-  card[1]=0x22;
-  card[2]=0x33;
-  card[3]=0x44;
-  card[4]=0x55;
-  Serial.println(addCard(card));
-  card[0]=0x11;
-  card[1]=0x22;
-  card[2]=0x77;
-  card[3]=0x44;
-  card[4]=0x55;
-  Serial.println(addCard(card));
-  Serial.println(validateCard(card));
-  card[2]=0x33;
-  Serial.println(validateCard(card));
-  card[2]=0x99;
-  Serial.println(validateCard(card));
-  while (1);
-}
-*/
