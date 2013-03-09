@@ -14,13 +14,15 @@ uint8_t numbers[5];
 #define SAVE_SLOTS      100
 #define BUZZER          5
 #define LOCK            6
+#define RLED            7
+#define GLED            8
 
 void beep(uint16_t t){
-  for (uint16_t i=0;i<t;i++){
+  for (uint16_t i=0;i<t*2;i++){
     digitalWrite(BUZZER,HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(250);
     digitalWrite(BUZZER,LOW);
-    delayMicroseconds(500);
+    delayMicroseconds(250);
   }
 }
 
@@ -37,6 +39,10 @@ void setup() {
   Serial.println("Hello"); 
   pinMode(4,INPUT);  // RFID input
   pinMode(LED,OUTPUT);
+  pinMode(RLED,OUTPUT);
+  pinMode(GLED,OUTPUT);
+  digitalWrite(RLED,HIGH);
+  digitalWrite(GLED,LOW);
   pinMode(ADM_BUTTON,INPUT_PULLUP);  // Administrative button
   pinMode(BUZZER,OUTPUT);
   digitalWrite(BUZZER,LOW);
@@ -193,16 +199,22 @@ void loop() {
   Serial.print("ACCESS ");
   if (validateCard(numbers)>=0){
     Serial.println("GRANTED");
+    digitalWrite(RLED,LOW);
+    digitalWrite(GLED,HIGH);
     beep(400);
     digitalWrite(LED,LOW);
     digitalWrite(LOCK,HIGH);
     delay(5000);
     digitalWrite(LOCK,LOW);
+    digitalWrite(RLED,HIGH);
+    digitalWrite(GLED,LOW);
   } else {
     Serial.println("DENIED");
+    digitalWrite(RLED,LOW);
     beep(200);
     delay(50);
     beep(200);
+    digitalWrite(RLED,HIGH);
     digitalWrite(LED,LOW);
     delay(2000);
   }
