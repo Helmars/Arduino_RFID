@@ -14,13 +14,15 @@ uint8_t numbers[5];
 #define SAVE_SLOTS      100
 #define BUZZER          5
 #define LOCK            6
+#define GLED            7
+#define RLED            8
 
 void beep(uint16_t t){
-  for (uint16_t i=0;i<t;i++){
+  for (uint16_t i=0;i<t*2;i++){
     digitalWrite(BUZZER,HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(250);
     digitalWrite(BUZZER,LOW);
-    delayMicroseconds(500);
+    delayMicroseconds(250);
   }
 }
 
@@ -160,7 +162,7 @@ int8_t validateCard(uint8_t card[]){
   }
   return -1;
 }
-
+/*
 void loop() {
   digitalWrite(LED,LOW);
   uint8_t result;
@@ -207,3 +209,28 @@ void loop() {
     delay(2000);
   }
 }
+*/
+
+void loop() {
+  digitalWrite(LED,LOW);
+  uint8_t result;
+  do {
+    result=readCard();
+  } while (result!=0);
+  digitalWrite(LED,HIGH);
+  Serial.print("Raw data: ");
+  for (uint8_t i=0;i<5;i++) Serial.print(numbers[i],HEX);
+  Serial.println();
+  Serial.print("Customer ID: ");
+  Serial.print(numbers[0],HEX);
+  Serial.println();
+  Serial.print("Card number: ");
+  uint8_t numbersr[4];
+  numbersr[0]=numbers[4];
+  numbersr[1]=numbers[3];
+  numbersr[2]=numbers[2];
+  numbersr[3]=numbers[1];
+  Serial.print(*(uint32_t*)(&numbersr),DEC);
+  Serial.println();
+}
+
