@@ -41,8 +41,8 @@ void setup() {
   pinMode(LED,OUTPUT);
   pinMode(RLED,OUTPUT);
   pinMode(GLED,OUTPUT);
-  digitalWrite(RLED,HIGH);
-  digitalWrite(GLED,LOW);
+  digitalWrite(RLED,LOW);
+  digitalWrite(GLED,HIGH);
   pinMode(ADM_BUTTON,INPUT_PULLUP);  // Administrative button
   pinMode(BUZZER,OUTPUT);
   digitalWrite(BUZZER,LOW);
@@ -199,22 +199,22 @@ void loop() {
   Serial.print("ACCESS ");
   if (validateCard(numbers)>=0){
     Serial.println("GRANTED");
-    digitalWrite(RLED,LOW);
-    digitalWrite(GLED,HIGH);
-    beep(400);
+    digitalWrite(RLED,HIGH);
+    digitalWrite(GLED,LOW);
+    beep(100);
+    delay(50);
+    beep(100);
     digitalWrite(LED,LOW);
     digitalWrite(LOCK,HIGH);
     delay(5000);
     digitalWrite(LOCK,LOW);
-    digitalWrite(RLED,HIGH);
-    digitalWrite(GLED,LOW);
+    digitalWrite(RLED,LOW);
+    digitalWrite(GLED,HIGH);
   } else {
     Serial.println("DENIED");
-    digitalWrite(RLED,LOW);
-    beep(200);
-    delay(50);
-    beep(200);
     digitalWrite(RLED,HIGH);
+    beep(600);
+    digitalWrite(RLED,LOW);
     digitalWrite(LED,LOW);
     delay(2000);
   }
